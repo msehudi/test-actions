@@ -1,0 +1,111 @@
+
+
+name: Azure CI Dev
+
+env:
+  AZURE_WEBAPP_NAME: goa-wdp-keycloak-proxy-dev   # set this to the name of your Azure Web App
+  AZURE_WEBAPP_PACKAGE_PATH: '.'      # set this to the path to your web app project, defaults to the repository root
+  DOTNET_VERSION: '	7.0.*'                 # set this to the .NET Core version to use
+
+on:
+  push:
+    branches: [ "dev" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: 'Development'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Set up dependency caching for faster builds
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Build
+        run: dotnet build 
+        
+      - name: publish
+        run: dotnet build  -c Release -o ./release
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: admin-api-dev
+          path: ./realese 
+
+  deploy:
+    permissions:
+      contents: none
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'Development'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: admin-api-dev
+
+      # - name: Manual Approval
+      #   uses: ekeel/approval-action@v1.0.0
+      #   with:
+      #     # A GitHub token with repo scope.
+      #     # The default secrets.GITHUB_TOKEN does not work with octokit to open/update/close issues.
+      #     token: ${{ secrets.GH_PAT }}
+      
+      #     # A comma separated list of GitHub usernames that are allowed to approve.
+      #     # Example: 'ekeel,octocat'
+      #     approvers: 'Moffat-Sehudi_goa'
+      
+      #     # The number of approvals/rejections required to continue the workflow.
+      #     minimumApprovals: '1'
+      
+      #     # The title of the issue to create.
+      #     issueTitle: 'Test issue title'
+      
+      #     # The body of the issue to create.
+      #     issueBody: 'Test issue body'
+      
+      #     # A comma separated list of labels to add to the issue.
+      #     issueLabels: 'ManualApproval,ApprovalAction'
+      
+      #     # Exclude the workflow initiator from the list of approvers.
+      #     excludeInitiator: 'false'
+      
+      #     # A comma separated list of words that will be used to approve.
+      #     approveWords: 'approve, approved'
+      
+      #     # A comma separated list of words that will be used to reject.
+      #     rejectWords: 'deny, denied, reject, rejected'
+      
+      #     # The number of minutes to wait between checks for approvals.
+      #     waitInterval: '1'
+      
+      #     # The number of minutes to wait before timing out.
+      #     waitTimeout: '5'
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          package: admin-api-dev
