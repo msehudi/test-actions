@@ -47,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: admin-api-dev
-          path: test-actions/webapi/realese 
+          path: webapi/release 
 
   deploy:
     permissions:
