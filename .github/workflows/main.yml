@@ -9,7 +9,7 @@ env:
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 permissions:
@@ -38,16 +38,16 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Build
-        run: dotnet build 
+        run: dotnet build webapi/webapi.csproj
         
       - name: publish
-        run: dotnet build  -c Release -o ./release
+        run: dotnet build webapi/webapi.csproj  -c Release -o ./release
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
         with:
           name: admin-api-dev
-          path: ./realese 
+          path: webapi/realese 
 
   deploy:
     permissions:
