@@ -41,7 +41,7 @@ jobs:
         run: dotnet build webapi/webapi.csproj
         
       - name: publish
-        run: dotnet publish webapi/webapi.csproj  -c Release -o webapi/release
+        run: dotnet publish webapi/webapi.csproj  -c Release -o webapi/release; pwd;
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
